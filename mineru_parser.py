@@ -174,6 +174,12 @@ def download_unzip_standardize(zip_url, target_file_name):
         json_file = json.load(open(json_path, encoding='utf-8'))
         json_standardize_result = json_standardize(json_file)
 
+        if "Title" in json_standardize_result.keys():
+            target_file_name = json_standardize_result['Title']
+            special_characters = ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
+            for char in special_characters:
+                target_file_name = target_file_name.replace(char, '')
+
         with open(f"./output/{target_file_name}.json", "w", encoding='utf-8') as f:
             json.dump(json_standardize_result, f, ensure_ascii=False, indent=4)
         print(f"文件 {target_file_name} 标准化完成")
@@ -206,67 +212,9 @@ def remove_duplicates(pdf_name_list, pdf_path_list, url_name_list, url_list):
 
     return unique_pdf_names, unique_pdf_paths, unique_url_names, unique_urls
 
-def main():
-    # 获取命令行参数（跳过第一个参数，因为它是脚本名称）
-    args = sys.argv[1:]
-
-    if not args:
-        print("请提供至少一个 PDF 文件、目录或 URL。")
-        return
-
-    pdf_name_list = []
-    pdf_path_list = []
-
-    url_name_list = []
-    url_list = []
-
-    has_url = False  # 标志：是否包含 URL
-    has_files = False  # 标志：是否包含文件或目录
-
-    for path in args:
-        if is_url(path):
-            # 处理 URL
-            is_valid, validated_url = validate_url(path)
-            if is_valid:
-                url_list.append(validated_url)
-                url_name_list.append(os.path.basename(validated_url))
-                has_url = True
-            else:
-                print(f"忽略无效 URL: {path}")
-        else:
-            # 处理文件或目录路径
-            if not validate_path(path):
-                continue
-
-            if os.path.isfile(path) and path.lower().endswith(".pdf"):
-                # 单个 PDF 文件
-                pdf_name_list.append(os.path.basename(path))
-                pdf_path_list.append(path)
-                has_files = True
-            elif os.path.isdir(path):
-                # 目录，读取目录下所有 PDF 文件
-                pdf_files = get_pdf_files(path)
-                for pdf_path in pdf_files:
-                    pdf_name_list.append(os.path.basename(pdf_path))
-                    pdf_path_list.append(pdf_path)
-                has_files = True
-            else:
-                print(f"忽略无效路径或非 PDF 文件: {path}")
-
-    # 去除重复项
-    pdf_name_list, pdf_path_list, url_name_list, url_list = remove_duplicates(
-        pdf_name_list, pdf_path_list, url_name_list, url_list
-    )
-
-    # 打印结果
-    print(f"包含 URL: {has_url}")
-    print(f"包含文件或目录: {has_files}")
-    print("PDF 文件列表:")
-    for name, path in zip(pdf_name_list, pdf_path_list):
-        print(f"  {name} -> {path}")
-    print("URL 列表:")
-    for name, url in zip(url_name_list, url_list):
-        print(f"  {name} -> {url}")
+def mineru_parser(pdf_name_list=None, pdf_path_list=None, url_name_list=None, url_list=None):
+    has_files = pdf_name_list is not None and len(pdf_name_list) > 0
+    has_url = url_name_list is not None and len(url_name_list) > 0
 
         # 使用独立的进程来运行 monitor_batch
     if has_files:
@@ -284,6 +232,71 @@ def main():
         files_monitor_process.join()
     if has_url:
         url_monitor_process.join()
+
+def main():
+    # 获取命令行参数（跳过第一个参数，因为它是脚本名称）
+    args = sys.argv[1:]
+
+    if not args:
+        print("请提供至少一个 PDF 文件、目录或 URL。")
+        return
+
+    pdf_name_list = []
+    pdf_path_list = []
+
+    url_name_list = []
+    url_list = []
+
+    for path in args:
+        if is_url(path):
+            # 处理 URL
+            is_valid, validated_url = validate_url(path)
+            if is_valid:
+                url_list.append(validated_url)
+                url_name_list.append(os.path.basename(validated_url))
+            else:
+                print(f"忽略无效 URL: {path}")
+        else:
+            # 处理文件或目录路径
+            if not validate_path(path):
+                continue
+
+            if os.path.isfile(path) and path.lower().endswith(".pdf"):
+                # 单个 PDF 文件
+                pdf_name_list.append(os.path.basename(path))
+                pdf_path_list.append(path)
+            elif os.path.isdir(path):
+                # 目录，读取目录下所有 PDF 文件
+                pdf_files = get_pdf_files(path)
+                for pdf_path in pdf_files:
+                    pdf_name_list.append(os.path.basename(pdf_path))
+                    pdf_path_list.append(pdf_path)
+
+            else:
+                print(f"忽略无效路径或非 PDF 文件: {path}")
+
+    # 去除重复项
+    pdf_name_list, pdf_path_list, url_name_list, url_list = remove_duplicates(
+        pdf_name_list, pdf_path_list, url_name_list, url_list
+    )
+
+    # 打印结果
+    print("PDF 文件列表:")
+    if len(pdf_name_list) !=0:
+        for name, path in zip(pdf_name_list, pdf_path_list):
+            print(f"  {name} -> {path}")
+    if len(url_name_list) !=0:
+        print("URL 列表:")
+        for name, url in zip(url_name_list, url_list):
+            print(f"  {name} -> {url}")
+
+    mineru_parser(
+        pdf_name_list=pdf_name_list,
+        pdf_path_list=pdf_path_list,
+        url_name_list=url_name_list,
+        url_list=url_list
+    )
+
 
 if __name__ == "__main__":
     main()
