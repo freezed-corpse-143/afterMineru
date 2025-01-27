@@ -39,7 +39,11 @@ This tool is designed to parse PDF files or URLs and standardize their content i
 Before running the script, ensure that the `MINERU_API_KEY` environment variable is set:
 
 ```bash
+# linux
 export MINERU_API_KEY='your_mineru_api_key'
+
+# windows
+setx MINERU_API_KEY "your_mineru_api_key"
 ```
 
 Get `MINERU_API_KEY` [mineru]([MinerU](https://mineru.net/apiManage/docs))
