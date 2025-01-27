@@ -109,7 +109,6 @@ def monitor_batch(batch_id):
                     full_zip_url_dict[result['file_name']] = result['full_zip_url']
                     # 使用同步方式处理下载和解压
                     pool.apply_async(download_unzip_standardize, args=(result['full_zip_url'], result['file_name']))
-                time.sleep(2)
             time.sleep(60)
 
 def run_monitor_batch(batch_id):
@@ -176,10 +175,10 @@ def download_unzip_standardize(zip_url, target_file_name):
         json_standardize_result = json_standardize(json_file)
 
         if "Title" in json_standardize_result.keys():
-            target_file_name = json_standardize_result['Title']
+            target_file_name = json_standardize_result['Title'][0]
             special_characters = ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
             for char in special_characters:
-                target_file_name = target_file_name.replace(char, '')
+                target_file_name = target_file_name.replace(char, '').split("\n")[0]
 
         with open(f"./output/{target_file_name}.json", "w", encoding='utf-8') as f:
             json.dump(json_standardize_result, f, ensure_ascii=False, indent=4)
@@ -218,8 +217,8 @@ def mineru_parser(pdf_name_list=None, pdf_path_list=None, url_name_list=None, ur
     has_url = url_name_list is not None and len(url_name_list) > 0
 
     if has_files:
-        # 分批处理文件，每批 4 个
-        batch_size = 4
+        # 分批处理文件，每批 200 个
+        batch_size = 200
         for i in range(0, len(pdf_name_list), batch_size):
             batch_names = pdf_name_list[i:i + batch_size]
             batch_paths = pdf_path_list[i:i + batch_size]
@@ -228,8 +227,8 @@ def mineru_parser(pdf_name_list=None, pdf_path_list=None, url_name_list=None, ur
             run_monitor_batch(files_batch_id)  # 同步处理当前批次
 
     if has_url:
-        # 分批处理 URL，每批 4 个
-        batch_size = 4
+        # 分批处理 URL，每批 200 个
+        batch_size = 200
         for i in range(0, len(url_name_list), batch_size):
             batch_names = url_name_list[i:i + batch_size]
             batch_urls = url_list[i:i + batch_size]
