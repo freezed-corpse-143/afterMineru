@@ -91,7 +91,7 @@ def monitor_batch(batch_id):
     full_zip_url_dict = dict()
 
     # 在每个子进程中创建独立的 Pool
-    with Pool() as pool:
+    with Pool(processes=4) as pool:
         while not all_done:
             all_done = True
             res = requests.get(monitor_url, headers=header).json()['data']
