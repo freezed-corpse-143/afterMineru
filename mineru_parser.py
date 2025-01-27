@@ -107,7 +107,7 @@ def monitor_batch(batch_id):
                     continue
                 if result['file_name'] not in full_zip_url_dict:
                     full_zip_url_dict[result['file_name']] = result['full_zip_url']
-                    # 使用进程池来处理下载和解压
+                    # 使用同步方式处理下载和解压
                     pool.apply_async(download_unzip_standardize, args=(result['full_zip_url'], result['file_name']))
             time.sleep(60)
 
@@ -216,23 +216,25 @@ def mineru_parser(pdf_name_list=None, pdf_path_list=None, url_name_list=None, ur
     has_files = pdf_name_list is not None and len(pdf_name_list) > 0
     has_url = url_name_list is not None and len(url_name_list) > 0
 
-        # 使用独立的进程来运行 monitor_batch
     if has_files:
-        files_batch_id = upload_batch_files(pdf_name_list, pdf_path_list)
-        files_monitor_process = Process(target=run_monitor_batch, args=(files_batch_id,))
-        files_monitor_process.start()
-    
-    if has_url:
-        url_batch_id = upload_batch_urls(url_name_list, url_list)
-        url_monitor_process = Process(target=run_monitor_batch, args=(url_batch_id,))
-        url_monitor_process.start()
+        # 分批处理文件，每批 4 个
+        batch_size = 4
+        for i in range(0, len(pdf_name_list), batch_size):
+            batch_names = pdf_name_list[i:i + batch_size]
+            batch_paths = pdf_path_list[i:i + batch_size]
+            print(f"处理批次: {batch_names}")
+            files_batch_id = upload_batch_files(batch_names, batch_paths)
+            run_monitor_batch(files_batch_id)  # 同步处理当前批次
 
-    # 等待所有 monitor_batch 进程完成
-    if has_files:
-        files_monitor_process.join()
     if has_url:
-        url_monitor_process.join()
-
+        # 分批处理 URL，每批 4 个
+        batch_size = 4
+        for i in range(0, len(url_name_list), batch_size):
+            batch_names = url_name_list[i:i + batch_size]
+            batch_urls = url_list[i:i + batch_size]
+            print(f"处理批次: {batch_names}")
+            url_batch_id = upload_batch_urls(batch_names, batch_urls)
+            run_monitor_batch(url_batch_id)  # 同步处理当前批次
 def main():
     # 获取命令行参数（跳过第一个参数，因为它是脚本名称）
     args = sys.argv[1:]
