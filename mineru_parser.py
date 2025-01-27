@@ -109,6 +109,7 @@ def monitor_batch(batch_id):
                     full_zip_url_dict[result['file_name']] = result['full_zip_url']
                     # 使用同步方式处理下载和解压
                     pool.apply_async(download_unzip_standardize, args=(result['full_zip_url'], result['file_name']))
+                time.sleep(2)
             time.sleep(60)
 
 def run_monitor_batch(batch_id):
