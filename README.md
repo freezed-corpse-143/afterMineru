@@ -38,6 +38,10 @@ This tool is designed to parse PDF files or URLs and standardize their content i
 
 Before running the script, ensure that the `MINERU_API_KEY` environment variable is set:
 
+> [!WARNING]
+>
+> Please select a proxy region close to China.
+
 ```bash
 # linux
 export MINERU_API_KEY='your_mineru_api_key'
