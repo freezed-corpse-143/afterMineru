@@ -82,6 +82,22 @@ python mineru_parser.py /path/to/pdf/file.pdf https://example.com/file.pdf
 
 The parsed JSON files will be saved in the `./output` directory, with filenames corresponding to the input PDF files or URLs.
 
+The structure of parsed JSON is as follows:
+```
+{
+	"structure": {
+		"Title": ["0"],
+		"Introduction": ["1"]
+	},
+	"data"{
+		"0": "xxx",
+		"1": "xxx"
+	}
+}
+```
+
+
+
 ## File Structure
 
 - `mineru_parser.py`: The main script responsible for parsing and standardizing PDF files and URLs.
