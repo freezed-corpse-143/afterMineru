@@ -10,6 +10,7 @@ digits_list = [str(i) for i in range(1, 10)]
 letters_list = list(string.ascii_lowercase)
 
 def json_standardize(data):
+    global digits_list, letters_list
     result = dict()
     last_level_1 = "Title"
     result[last_level_1] = []
@@ -52,6 +53,67 @@ def json_standardize(data):
             new_result['table'].append(item['table_caption'])
     return new_result
 
+def json_standardize_2(json_data):
+    global digits_list, letters_list
+    structure = dict()
+    data = dict()
+    data_idx = 0
+
+    last_level_1 = "Title"
+    structure[last_level_1] = []
+    if 'text_level' in json_data[0].keys():
+        json_data[0].pop('text_level')
+    for item in json_data:
+        if item['type'] != "text" or item['text'].strip() == "":
+            continue
+        if "text_level" in item.keys():
+            last_level_1 = item['text'].strip()
+            structure[last_level_1] = []
+        else:
+            if len(structure[last_level_1]) == 0:
+                structure[last_level_1].append(str(data_idx))
+                data[str(data_idx)] = item['text'].strip() +"\n"
+                data_idx += 1
+            else:
+                data[str(data_idx-1)] += item['text'].strip() + "\n"
+
+    for key in data.keys():
+        data[key] = data[key].strip("\n")
+    
+    new_structure = dict()
+    last_key = "+"
+    for key in structure.keys():
+        if last_key[0] in digits_list and key[0] == last_key[0]:
+            new_structure[last_key].append({key: structure[key]})
+        elif last_key.lower() == "appendix" and key.split(" ")[0].lower() in letters_list:
+            new_structure[last_key].append({key: structure[key]})
+        else:
+            new_structure[key] = structure[key]
+            last_key = key
+
+    new_structure['image'] = []
+    new_structure['table'] = []
+    for item in json_data:
+        if item['type'] == 'image' and len(item['img_caption']) > 0:
+            item_list = item['img_caption']
+            for caption in item_list:
+                new_structure['image'].append(str(data_idx))
+                data[str(data_idx)] = caption
+                data_idx += 1
+                continue
+        if item['type'] == 'table' and len(item['table_caption']) > 0:
+            item_list = item['table_caption']
+            for caption in item_list:
+                new_structure['table'].append(str(data_idx))
+                data[str(data_idx)] = caption
+                data_idx += 1
+                continue
+    result = {
+        "structure": new_structure,
+        "data": data
+    }
+    return result
+
 def main(json_path):
     global digits_list, letters_list
     if not json_path.endswith(".json"):
@@ -61,8 +123,7 @@ def main(json_path):
     
     data = json.load(open(json_path, 'r', encoding='utf-8'))
 
-    result = json_standardize(data)
-    
+    result = json_standardize_2(data)
 
     if "/" in json_path:
         file_name =  json_path.split("/")[-1]
@@ -70,8 +131,16 @@ def main(json_path):
         file_name = json_path.split("\\")[-1]
     else:
         raise Exception("文件路径错误")
-    output_path = "./output/" + file_name
-    with open(output_path, "w") as f:
+    if "Title" in result['structure'].keys():
+        file_name_idx = result['structure']['Title'][0]
+        file_name = result['data'][file_name_idx]
+        file_name = file_name.split("\n")[0].strip()
+        special_characters = ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
+        for char in special_characters:
+            file_name = file_name.replace(char, '')
+
+    output_path = f"./output/{file_name}.json"
+    with open(output_path, "w", encoding='utf-8') as f:
         json.dump(result, f, indent=4, ensure_ascii=False)
 
 if __name__ == "__main__":
