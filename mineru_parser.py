@@ -7,7 +7,7 @@ import json
 from urllib.parse import urlparse
 from multiprocessing import Pool
 
-from json_standardize import json_standardize_2
+from json_standardize import json_standardize
 
 upload_url = 'https://mineru.net/api/v4/file-urls/batch'
 api_key = os.environ['MINERU_API_KEY']
@@ -172,7 +172,7 @@ def download_unzip_standardize(zip_url, target_file_name):
 
         json_path = os.path.join(extract_folder, f"{extract_folder_suffix}_content_list.json")
         json_file = json.load(open(json_path, encoding='utf-8'))
-        json_standardize_result = json_standardize_2(json_file)
+        json_standardize_result = json_standardize(json_file)
 
         if "Title" in json_standardize_result['structure'].keys():
             target_file_name_idx = json_standardize_result['structure']['Title'][0]
